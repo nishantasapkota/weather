@@ -1,0 +1,18 @@
+@layer utilities {
+  .shadow-text {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.search input::placeholder {
+  color: #a0aec0;
+}
+
+.weather-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.weather-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
