@@ -37,10 +37,12 @@ async function fetchWeatherData(city) {
       }
     }
 
-    if (data.length === 0) {
-      weatherInfo.innerHTML = `<p>City not found. Please try again.</p>`;
-      return;
-    }
+    // if (data.length === 0 || data[0].city.toLowerCase() === "north east lincolnshire") {
+    //   if (data[0].city.toLowerCase() === "north east lincolnshire") {
+    //     weatherInfo.innerHTML = `<p>North East Lincolnshire is not available. Please try a different city.</p>`;
+    //     return;
+    //   }
+    // }
 
     const weather = data[0];
     const cityName = weather.city;
@@ -85,5 +87,5 @@ searchButton.addEventListener("click", () => {
   }
 });
 
-// Set default city to Kathmandu on page load
-fetchWeatherData("Kathmandu");
+// Set default city to North East Lincolnshire on page load
+fetchWeatherData("North East Lincolnshire");

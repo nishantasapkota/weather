@@ -21,8 +21,8 @@ if (!$conn) {
   die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get city name from query parameter or default to "Kathmandu"
-$cityName = isset($_GET['q']) ? $_GET['q'] : "Kathmandu";
+// Get city name from query parameter or default to "North East Lincolnshire"
+$cityName = isset($_GET['q']) ? $_GET['q'] : "North East Lincolnshire";
 
 // Check if data is older than 2 hours
 $checkDataQuery = "SELECT * FROM weather WHERE city = '$cityName' AND timestamp >= NOW() - INTERVAL 2 HOUR";
@@ -31,29 +31,40 @@ $result = mysqli_query($conn, $checkDataQuery);
 if (mysqli_num_rows($result) === 0) {
   // Fetch new data from OpenWeather API
   $apiKey = "ba791b84cedde7a962a247256f519444"; // Replace with your OpenWeather API key
-  $apiUrl = "https://api.openweathermap.org/data/2.5/weather?q=$cityName&units=metric&appid=$apiKey";
-  $response = file_get_contents($apiUrl);
-  $data = json_decode($response, true);
+  $apiUrl = "https://api.openweathermap.org/data/2.5/weather?q=" . urlencode($cityName) . "&units=metric&appid=$apiKey";
+  $response = @file_get_contents($apiUrl);
 
-  if ($data['cod'] === 200) {
-    // Extract relevant data
-    $city = $data['name'];
-    $condition = $data['weather'][0]['main'];
-    $temperature = $data['main']['temp'];
-    $pressure = $data['main']['pressure'];
-    $humidity = $data['main']['humidity'];
-    $windSpeed = $data['wind']['speed'];
-    $windDirection = $data['wind']['deg'];
-    $icon = $data['weather'][0]['icon'];
-
-    // Insert new data into the database
-    $insertQuery = "INSERT INTO weather (city, `condition`, temperature, pressure, humidity, wind_speed, wind_direction, icon, timestamp)
-                    VALUES ('$city', '$condition', $temperature, $pressure, $humidity, $windSpeed, $windDirection, '$icon', NOW())";
-    mysqli_query($conn, $insertQuery);
-  } else {
-    echo json_encode([]);
+  if ($response === FALSE) {
+    // Handle the error if the API request fails
+    http_response_code(400);
+    echo json_encode(["error" => "Failed to fetch data from the API. Please check the city name."]);
     exit;
   }
+
+  $data = json_decode($response, true);
+
+  // Check if the data is valid
+  if (!isset($data['cod']) || $data['cod'] != 200) {
+    // Handle the case where the API returns an error code
+    http_response_code(400);
+    echo json_encode(["error" => "City not found. Please try a different city."]);
+    exit;
+  }
+
+  // Extract relevant data
+  $city = $data['name'];
+  $condition = $data['weather'][0]['main'];
+  $temperature = $data['main']['temp'];
+  $pressure = $data['main']['pressure'];
+  $humidity = $data['main']['humidity'];
+  $windSpeed = $data['wind']['speed'];
+  $windDirection = $data['wind']['deg'];
+  $icon = $data['weather'][0]['icon'];
+
+  // Insert new data into the database
+  $insertQuery = "INSERT INTO weather (city, `condition`, temperature, pressure, humidity, wind_speed, wind_direction, icon, timestamp)
+                  VALUES ('$city', '$condition', $temperature, $pressure, $humidity, $windSpeed, $windDirection, '$icon', NOW())";
+  mysqli_query($conn, $insertQuery);
 }
 
 // Fetch data from the database
