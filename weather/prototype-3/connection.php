@@ -54,17 +54,6 @@ if ($data['cod'] === "200") {
     // Convert the associative array to a numerically indexed array
     $rows = array_values($dailyData);
 
-    // Clear previous data for the city (optional)
-    $deleteQuery = "DELETE FROM weather WHERE city = '{$rows[0]['city']}'";
-    mysqli_query($conn, $deleteQuery);
-
-    // Insert aggregated data into the database
-    foreach ($rows as $entry) {
-        $insertQuery = "INSERT INTO weather (city, `condition`, temperature, pressure, humidity, wind_speed, wind_direction, icon, timestamp)
-                        VALUES ('{$entry['city']}', '{$entry['condition']}', {$entry['temperature']}, {$entry['pressure']}, {$entry['humidity']}, {$entry['wind_speed']}, {$entry['wind_direction']}, '{$entry['icon']}', '{$entry['timestamp']}')";
-        mysqli_query($conn, $insertQuery);
-    }
-
     // Fetch the data from the database to return
     $fetchQuery = "SELECT * FROM weather WHERE city = '{$rows[0]['city']}' ORDER BY timestamp DESC";
     $result = mysqli_query($conn, $fetchQuery);
@@ -72,6 +61,26 @@ if ($data['cod'] === "200") {
 
     while ($row = mysqli_fetch_assoc($result)) {
         $finalRows[] = $row;
+    }
+
+    // Check if the latest data is older than 2 hours
+    if (!empty($finalRows)) {
+        $latestTimestamp = strtotime($finalRows[0]['timestamp']);
+        $currentTimestamp = time();
+        
+        // If the latest data is older than 2 hours (7200 seconds), update it
+        if (($currentTimestamp - $latestTimestamp) > 7200) {
+            // Clear previous data for the city (optional)
+            $deleteQuery = "DELETE FROM weather WHERE city = '{$rows[0]['city']}'";
+            mysqli_query($conn, $deleteQuery);
+
+            // Insert aggregated data into the database
+            foreach ($rows as $entry) {
+                $insertQuery = "INSERT INTO weather (city, `condition`, temperature, pressure, humidity, wind_speed, wind_direction, icon, timestamp)
+                                VALUES ('{$entry['city']}', '{$entry['condition']}', {$entry['temperature']}, {$entry['pressure']}, {$entry['humidity']}, {$entry['wind_speed']}, {$entry['wind_direction']}, '{$entry['icon']}', '{$entry['timestamp']}')";
+                mysqli_query($conn, $insertQuery);
+            }
+        }
     }
 
     // Return the aggregated data as a response
